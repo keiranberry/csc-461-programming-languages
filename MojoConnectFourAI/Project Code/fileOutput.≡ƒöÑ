@@ -1,0 +1,30 @@
+from commandLine import *
+from board import Board
+from history import History
+from python import Python as py
+
+def outputHistory(inout history: History, player1: String, player2: String) -> None:
+    # takes in a list of boards, formats them, and outputs them to a file
+    input = py.import_module("builtins").input
+    let outFile = input("Please enter the name of the file you would like to output to: ").__str__()
+
+    let os = py.import_module("os")
+
+    let baseLoc = os.getcwd().__str__()
+
+    var tempBoard = Board(6, 7, 4, 1, 2)
+
+    with open(baseLoc+ "/" + outFile, 'w') as file:
+        file.write("Game History\n")
+        let n = history.getLenOfMoves()
+        for b in range(n):
+            let piecePlayed = history.piecesPlayed[b]
+            let player = player1 if piecePlayed == 0 else player2
+            
+            let move = "Move #" + String(history.moves[b]) + "\n"+ player + "'s turn:\n"
+
+            tempBoard.playPiece(piecePlayed, history.moves[b])
+
+            file.write(move)
+            file.write(formatBoard(tempBoard))
+            file.write("\n\n")

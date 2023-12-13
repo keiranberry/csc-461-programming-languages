@@ -1,0 +1,29 @@
+from board import Board
+
+fn formatBoard(inout board: Board) -> String:
+    # takes in a board, outputs a string displaying it
+    var b: String = "   C • O • N • N • E • C • T\n             four      \n\n  "
+    for c in range(board.__cols):
+        b += "(" + String(c+1) + ") "
+    b += "\n +---+---+---+---+---+---+---+\n"
+    let numRows: Int = board.__rows
+    let numCols: Int = board.__cols
+    for row in range(numRows):
+        for col in range(numCols):
+            let piece: String = String(board.getPieceAtLocation(row, col))
+            b = b + " | " +  normalizePiece(piece)
+        b = b + " | " + "\n" + " +---+---+---+---+---+---+---+\n"
+    return b
+
+fn normalizePiece(piece: String) -> String:
+    if piece == '-1':
+        return ' '
+    if piece == "0":
+        return 'O'
+    if piece == "1":
+        return 'X'
+    return piece
+
+fn displayBoard(inout board: Board) -> None:
+    # takes in a board, formats it, prints the board to the terminal
+    print(formatBoard(board))

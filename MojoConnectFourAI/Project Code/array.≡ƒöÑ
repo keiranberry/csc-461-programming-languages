@@ -1,0 +1,39 @@
+"""
+Author: Keiran Berry
+
+Description: This is an array class, as mojo does not have 
+one built in. It is templated to work with any type that is 
+not complex (most primitive types, but not structs). To create a new 
+array, simply give it a type and a size. 
+
+Example: var newArray: Array[Int] = Array[Int](5)
+"""
+
+struct Array[T: AnyRegType]:
+    var data: Pointer[T]
+    var size: Int
+
+    fn __init__(inout self, size: Int, value: T):
+        self.size = size
+        self.data = Pointer[T].alloc(self.size)
+        for i in range(self.size):
+            self.data.store(i, value)
+
+    fn __copyinit__(inout self, other: Self):
+        self.size = other.size
+        self.data = Pointer[T].alloc(self.size)
+        for i in range(self.size):
+            let value = other.data.load(i)
+            self.data.store(i, value)
+
+    fn __getitem__(self, i: Int) -> T:
+        return self.data.load(i)
+
+    fn __setitem__(inout self, loc: Int, item: T):
+        if loc >= self.size:
+            print("Warning: you're trying to set an index out of bounds, doing nothing")
+            return
+        self.data.store(loc, item)
+
+    fn __del__(owned self):
+        self.data.free()

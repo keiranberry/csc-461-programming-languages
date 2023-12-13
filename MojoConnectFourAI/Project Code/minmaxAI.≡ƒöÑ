@@ -1,0 +1,117 @@
+from board import Board
+from array import Array
+from random import random_si64
+
+"""
+Author: Erin Green
+
+Description: This is the struct for the minmax AI, which uses the minmax algorithm to produce
+an Ai that is challengine to bead. However, it is not impossible due to the randomized choice made
+when scores are evaluated to be of the same value and the limited depth of the algorithm (so not every
+possibility is seen by the AI at a time).
+
+To use this AI, simply call the choice function and pass in the board. The AI will return
+an integer representing the column in which it wants to play.
+"""
+struct min_max_ai:
+   var player: Int
+   var opponent: Int
+   var maxDepth : Int
+
+   #so we know which pieces are ours
+   fn __init__(inout self, player: Int, opponent: Int) -> None:
+      self.player = player
+      self.opponent = opponent
+      self.maxDepth = 5
+
+   #returns the column in which it wants to place a piece
+   fn makeChoice(self, b: Board) -> Int:
+     #set up an array to keep track of "game" score
+     var scores = Array[Int](b.__cols, 0)
+     var bests = Array[Int](b.__cols,-1)
+     var bestScore = scores.__getitem__(0)
+     var bestChoice = -1
+     var multipleChoices = False
+     var valid = False
+     var i = 0
+   
+     self.min_max_alg(0, b, self.player, -1, scores)
+
+     #find first valid move
+     while valid == False and i < b.__cols:
+      var temp = b
+      valid = temp.playPiece(self.player,i)
+      temp.__del__()
+      if valid:
+         bestChoice = i
+         bestScore = scores.__getitem__(i)
+      i += 1
+
+     #choose best choice and move on
+     for i in range(0, b.__cols):
+        var temp = b
+        valid = temp.playPiece(self.player,i)
+        let score = scores.__getitem__(i)
+        if score > bestScore and valid == True:
+            bestScore = score
+            bestChoice = i
+            multipleChoices = False
+        elif score == bestScore and valid == True:
+            bests.__setitem__(i,bestChoice)
+            multipleChoices = True
+
+     if multipleChoices == True:
+         bestChoice = self.chooseRandom(b,bests,bestChoice)
+     scores.__del__()
+     bests.__del__()
+     return bestChoice
+
+   #choice is the very first choice made, 
+   fn min_max_alg(self, depth: Int, b: Board, player: Int, choice: Int, inout scores: Array[Int]) -> None:
+      let bestChoice = 0
+      var temp = b
+      let win = temp.checkForWinner()
+      let nextPlayer = self.player if player == self.opponent else self.opponent
+      
+      temp.__del__()
+      #if board has winner, set appropriate score
+      if win == True:
+         let currentScore = scores.__getitem__(choice)
+         if player == self.player:
+            if depth == 2:
+               scores.__setitem__(choice, -100000)
+            else:
+               scores.__setitem__(choice, currentScore-10)
+            return
+         else:
+            if depth == 1:
+               scores.__setitem__(choice, 100000)
+            else:
+               scores.__setitem__(choice, currentScore+10)
+            return
+      elif depth == self.maxDepth:
+         return
+
+      #otherwise loop through each col, attempting to make a move as a player
+      for i in range(0, b.__cols):
+         var copy = b
+         let validMove = copy.playPiece(player-1,i)
+         if validMove == True:
+            if choice == -1:
+               self.min_max_alg(depth+1, copy, nextPlayer, i, scores)
+            else:
+               self.min_max_alg(depth+1, copy, nextPlayer, choice, scores)
+         copy.__del__()
+
+   fn chooseRandom(self, b: Board, bests: Array[Int], opt: Int) -> Int:
+      var copy = b
+      var choice = random_si64(0,b.__cols)
+      var validPlay = copy.playPiece(self.player, choice.to_int())
+      var validMove = bests.__getitem__(choice.to_int())
+
+      while validPlay == False or validMove != opt:
+         choice = random_si64(0,b.__cols-1)
+         validPlay = copy.playPiece(self.player, choice.to_int())
+         validMove = bests.__getitem__(choice.to_int())
+
+      return choice.to_int()

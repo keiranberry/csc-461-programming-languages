@@ -1,0 +1,49 @@
+from python import Python
+
+def main():
+    input = Python.import_module("builtins").input
+    var selection: String = ""
+    
+    while(selection != "0"):
+        printMenu()
+
+        # input example
+        selection = input("Selection: ").__str__()
+        print()
+
+        # branching example
+        if selection == "1":
+            helloWorld()
+        elif selection == "2":
+            sayHello()
+        elif selection == "3":
+            printSpacedName()
+        elif selection != "0":
+            print("Invalid selection")
+
+    
+
+def printMenu() -> None:
+
+    # output example
+    print("\n0: Exit")
+    print("1: Hello World")
+    print("2: Hello <name>")
+    print("3: Print Name Letter-By-Letter")
+
+def helloWorld() -> None:
+    print("Hello World!")
+
+def sayHello() -> None:
+    input = Python.import_module("builtins").input
+    let name: String = input("Enter your name: ").__str__()
+    print("\nHello " + name)
+
+def printSpacedName() -> None:
+    input = Python.import_module("builtins").input
+    let name: String = input("Enter your name: ").__str__()
+    print()
+
+    # iteration example
+    for i in range(len(name)):
+        print(name[i])

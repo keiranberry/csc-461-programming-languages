@@ -1,0 +1,194 @@
+from board import Board
+from array import Array
+from python import Python
+
+struct max_ai:
+    """
+    Author: Robert Book
+
+    Description:
+        This struct is for the medium AI that uses a modified max algorithm (similar to minmax but without the min).
+        This means that instead of calculating best and worst moves possible and comparing them, it only looks at the 
+        best moves while ignoring if it sets up a win for its opponent.
+
+    Usage: 
+        To use this AI, you can call it like any other struct and just have to specify it's ID and the ID of its oponent
+        (should be 1 and 2 for either of those). The makeChoice() function will return an integer that is the column that
+        it thinks is the best move.
+    """
+    var __id: Int
+    var __max_depth: Int
+    var __oppID: Int
+
+    fn __init__(inout self, id: Int, oppID: Int):
+        self.__id = id - 1
+        self.__oppID = oppID - 1
+        self.__max_depth = 3
+
+    def makeChoice(inout self, b: Board) -> Int:
+        if b.__lastPlayedCol == -1 and b.__lastPlayedRow == -1:
+            return 4
+        return self.max_alg(b, 0, True).get[0, Int]()
+
+    def max_alg(inout self, b:Board, depth:Int, maxPlayer:Bool) -> (Int, Int):
+        # get all valid locations to play
+        let all_valid_cols: Array[Bool] = self.get_valid_cols(b)
+        # check if win possible
+        let win_col: Int = self.win_possible(b)
+        let block_win_col: Int = self.block_win_possible(b)
+        var col_choice = 4
+
+        if depth == self.__max_depth or win_col != -1 or block_win_col != -1:
+        #   return score of current spot
+            if win_col != -1:
+                return win_col, 10000
+            elif block_win_col != -1:
+                return block_win_col, 900
+            else:
+                return col_choice, self.current_score(b)
+
+        var value = 0
+        for i in range(all_valid_cols.size):
+            #   copy board and play peice at col
+            if all_valid_cols[i] == True:
+                var b_copy: Board = b
+                if maxPlayer:
+                    let unusedBool = b_copy.playPiece(self.__id, i)
+                else:
+                    let unusedBool = b_copy.playPiece(self.__oppID, i)
+
+                let new_score = self.max_alg(b_copy, depth + 1, maxPlayer ^ True).get[1, Int]()
+                if new_score > value:
+                    value = new_score
+                    col_choice = i
+                b_copy.__del__()
+                
+        all_valid_cols.__del__()
+        return col_choice, value
+
+
+    fn get_valid_cols(inout self, b: Board) -> Array[Bool]:
+        var valid_col_arry: Array[Bool] = Array[Bool](b.__cols, False)
+        for i in range(b.__cols):
+            if b.__piecesInColumns[i] < b.__rows:
+                valid_col_arry[i] = True
+        return valid_col_arry
+
+    fn win_possible(inout self, b:Board) -> Int:
+        for i in range(b.__cols):
+            var copy:Board = b 
+            let unusedBool = copy.playPiece(self.__id, i)
+            if copy.checkForWinner():
+                copy.__del__()
+                return i
+            copy.__del__()
+        return -1
+
+    fn block_win_possible(inout self, b:Board) -> Int:
+        for i in range(b.__cols):
+            var copy:Board = b 
+            let unusedBool = copy.playPiece(self.__oppID, i)
+            if copy.checkForWinner():
+                copy.__del__()
+                return i
+            copy.__del__()
+        return -1
+
+    fn current_score(inout self, b: Board) -> Int:
+        var score = 0
+        # check for block win
+        # horiz
+        for i in range(b.__rows):
+            for j in range(b.__cols - 3):
+                var row_array: Array[Int] = Array[Int](4, -1)
+                for k in range(4):
+                    row_array.__setitem__(k, b.__boardState[(i * b.__cols) + (j + k)])
+                score += self.score_array(row_array)
+                row_array.__del__()
+
+        # vert
+        for j in range(b.__cols):
+            for i in range(b.__rows - 3):
+                var col_arry: Array[Int] = Array[Int](4, -1)
+                for k in range(4):
+                    col_arry.__setitem__(k, b.__boardState[((i + k) * b.__cols) + j])
+                score += self.score_array(col_arry)
+                col_arry.__del__()
+
+        # pos diag
+        for i in range(b.__rows - 3):
+            for j in range(b.__cols - 3):
+                var diag_arry: Array[Int] = Array[Int](4, -1)
+                for k in range(4):
+                    diag_arry.__setitem__(k, b.__boardState[((i + k) * b.__cols) + (j + k)])
+                score += self.score_array(diag_arry)
+                diag_arry.__del__()
+
+        # neg diag
+        for i in range(b.__rows - 3):
+            for j in range(b.__cols - 3):
+                var diag_arry: Array[Int] = Array[Int](4, -1)
+                for k in range(4):
+                    diag_arry.__setitem__(k, b.__boardState[((i + 3 + k) * b.__cols) + (j + k)])
+                score += self.score_array(diag_arry)
+                diag_arry.__del__()
+            
+        return score
+
+    fn score_array(inout self, arry: Array[Int]) -> Int:
+        if arry.__getitem__(0) == self.__id and  arry.__getitem__(1) == self.__id and 
+            arry.__getitem__(2) == self.__id and  arry.__getitem__(3) == self.__id:
+            return 10000 # win
+
+        elif arry.__getitem__(0) == self.__oppID and  arry.__getitem__(1) == self.__oppID and 
+            arry.__getitem__(2) == self.__oppID and  arry.__getitem__(3) == self.__id:
+            return 900 # block win
+        elif arry.__getitem__(0) == self.__oppID and  arry.__getitem__(1) == self.__oppID and 
+            arry.__getitem__(2) == self.__id and  arry.__getitem__(3) == self.__oppID:
+            return 900 # block win
+        elif arry.__getitem__(0) == self.__oppID and  arry.__getitem__(1) == self.__id and 
+            arry.__getitem__(2) == self.__oppID and  arry.__getitem__(3) == self.__oppID:
+            return 900 # block win
+        elif arry.__getitem__(0) == self.__id and  arry.__getitem__(1) == self.__oppID and 
+            arry.__getitem__(2) == self.__oppID and  arry.__getitem__(3) == self.__oppID:
+            return 900 # block win
+
+        elif arry.__getitem__(0) == self.__id and arry.__getitem__(1) == self.__id and 
+            arry.__getitem__(2) == self.__id:
+            return 10 # 3 in row
+        elif arry.__getitem__(1) == self.__id and arry.__getitem__(2) == self.__id and 
+            arry.__getitem__(3) == self.__id:
+            return 10 # 3 in row
+
+
+        elif arry.__getitem__(0) == self.__oppID and arry.__getitem__(1) == self.__oppID and 
+            arry.__getitem__(2) == self.__id:
+            return 8 # block 3 in row
+        elif arry.__getitem__(1) == self.__oppID and arry.__getitem__(2) == self.__oppID and 
+            arry.__getitem__(3) == self.__id:
+            return 8 # block 3 in row
+        elif arry.__getitem__(0) == self.__oppID and arry.__getitem__(1) == self.__id and 
+            arry.__getitem__(2) == self.__oppID:
+            return 8 # block 3 in row
+        elif arry.__getitem__(1) == self.__oppID and arry.__getitem__(2) == self.__id and 
+            arry.__getitem__(3) == self.__oppID:
+            return 8 # block 3 in row
+        elif arry.__getitem__(0) == self.__id and arry.__getitem__(1) == self.__oppID and 
+            arry.__getitem__(2) == self.__oppID:
+            return 8 # block 3 in row
+        elif arry.__getitem__(1) == self.__id and arry.__getitem__(2) == self.__oppID and 
+            arry.__getitem__(3) == self.__oppID:
+            return 8 # block 3 in row
+
+        elif arry.__getitem__(0) == self.__id and arry.__getitem__(1) == self.__id:
+            return 5 # 2 in row
+        elif arry.__getitem__(1) == self.__id and arry.__getitem__(2) == self.__id:
+            return 5 # 2 in row
+        elif arry.__getitem__(2) == self.__id and arry.__getitem__(3) == self.__id:
+            return 5 # 2 in row
+        else:
+            return 0
+
+
+
+    

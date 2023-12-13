@@ -1,0 +1,95 @@
+from board import Board
+from python import Python
+from basicAI import basic_ai
+from avgAI import max_ai
+from minmaxAI import min_max_ai
+from history import History
+import commandLine
+
+def chooseAI() -> Int:
+    var ai = 0
+    let input = Python.import_module("builtins").input
+    while True:
+        let answer = input('Please enter the difficulty of the AI (e, m, h): ').__str__()
+        if answer == 'e' or answer == 'E':
+            ai = 1
+        elif answer == 'm' or answer == 'M':
+            ai = 2
+        elif answer == 'h' or answer == 'H':
+            ai = 3
+        else:
+            print('Please enter e, m, or h')
+
+        if ai != 0:
+            break
+
+    return ai
+
+
+
+def AI_v_AI(playBoard: Board) -> History:
+    """
+    Author: Robert Book
+
+    Description:
+        This function is for the user watching two AIs play against one another. It uses all three Ais developed 
+        (random, max algorithm, and minmax algorithm) to give the user options on which AIs they want to see battle
+        it out.
+
+    Usage: 
+        This function is called and provided with a board class for the AIs to play on. It will then prompt the user 
+        to decide which AIs it wants to watch fight it out. By default the AIs are set to random. After the AIs play,
+        this function returns a history class to be read and output by the menu.
+    """
+    var playHist: History = History(6 * 7 + 10)
+    var selfPlayBoard: Board = playBoard
+    print('What types of AI would you like to pit against each other??')
+
+    input = Python.import_module("builtins").input
+
+    ai1_type = chooseAI()
+    ai2_type = chooseAI()
+
+
+    var ai1: stdAI = stdAI(1, 2, ai1_type)
+    var ai2: stdAI = stdAI(2, 1, ai2_type)
+    
+    var i = 0
+    while True:
+        let ai1Choice = ai1.choice(selfPlayBoard)
+        playHist.addMove(ai1Choice, 0)
+        var validPlay = selfPlayBoard.playPiece(0, ai1Choice)
+        if selfPlayBoard.checkForWinner() or not validPlay:
+            # print('AI 1 WINS!!!!')
+            return playHist
+
+        let ai2Choice = ai2.choice(selfPlayBoard)
+        playHist.addMove(ai2Choice, 1)
+        validPlay = selfPlayBoard.playPiece(1, ai2Choice)
+        if selfPlayBoard.checkForWinner() or not validPlay:
+            # print('AI 2 WINS!!!!')
+            return playHist
+        i += 1
+
+struct stdAI:
+    var selfType: object
+    var selfrand: basic_ai
+    var selfMinMax: min_max_ai
+    var selfMax: max_ai
+    def __init__(inout self, id: Int, oppid: Int, type):
+        self.selfType = type
+        self.selfrand = basic_ai(id)
+        self.selfMinMax = min_max_ai(id, oppid)
+        self.selfMax = max_ai(id, oppid)
+
+
+    def choice(inout self, board: Board) -> Int:
+        if self.selfType == 1:
+            return self.selfrand.makeChoice(board)
+        elif self.selfType == 3:
+            return self.selfMinMax.makeChoice(board)
+        elif self.selfType == 2:
+            return self.selfMax.makeChoice(board)
+        else:
+            print('ERROR')
+            return -1

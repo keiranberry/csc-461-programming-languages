@@ -1,0 +1,23 @@
+from python import Python as py
+from menu import Menu, yesOrNo
+
+def main():
+    input = py.import_module("builtins").input
+
+    while True:
+        var menu = Menu()
+
+        showMoves = yesOrNo("Would you like to see the moves played?")
+
+        if showMoves:
+            menu.history.showMoves(menu.player1, menu.player2)
+
+        outputHistory = yesOrNo("Would you like to output the history of the game?")
+
+        if outputHistory:
+            from fileOutput import outputHistory
+            outputHistory(menu.history, menu.player1, menu.player2)
+
+        playAgain = input("Would you like to play again? (y/n): ").__str__()
+        if playAgain == "n" or playAgain == "N":
+            break

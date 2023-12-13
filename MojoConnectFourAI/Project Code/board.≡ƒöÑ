@@ -1,0 +1,157 @@
+from array import Array
+from memory.unsafe import Pointer
+from python import Python
+
+"""
+Author: Keiran Berry
+
+Description: This is the struct for a connect four board. It contains 
+functionality to check for wins, see if the board is full, and play
+pieces. It also has a copy constructor and is composed of all 
+destructible types, so it does not need a del function. 
+
+To create a new board, pass in its number of rows, columns, the number 
+in a row required to win, and the id numbers of the players. 
+
+Example: var newBoard: Board = Board(6, 7, 4, 0, 1)
+"""
+
+struct Board:
+    var __rows: Int
+    var __cols: Int
+    var __playerOneID: Int
+    var __playerTwoID: Int
+    var __numberToWin: Int
+    var __lastPlayedRow: Int
+    var __lastPlayedCol: Int
+    var __boardState: Array[Int]
+    var __piecesInColumns: Array[Int]
+
+    fn __init__(inout self, rows: Int, cols: Int, numToWin: Int, playerOneID: Int, playerTwoID: Int) -> None:
+        # user can decide board size and number to win
+        self.__rows = rows
+        self.__cols = cols
+        self.__numberToWin = numToWin
+        self.__lastPlayedRow = -1
+        self.__lastPlayedCol = -1
+        self.__boardState = Array[Int](rows*cols, -1)  # create an Array filled with -1s
+        self.__piecesInColumns = Array[Int](cols, 0)
+        self.__playerOneID = playerOneID
+        self.__playerTwoID = playerTwoID
+
+        for i in range(cols):
+            self.__piecesInColumns[i] = 0
+
+
+    fn __copyinit__(inout self, other: Self):
+        self.__rows = other.__rows
+        self.__cols = other.__cols
+        self.__playerOneID = other.__playerOneID
+        self.__playerTwoID = other.__playerTwoID
+        self.__numberToWin = other.__numberToWin
+        self.__lastPlayedRow = other.__lastPlayedRow
+        self.__lastPlayedCol = other.__lastPlayedCol
+
+        # Create new Array objects and copy the values from other
+        self.__boardState = Array[Int](self.__rows * self.__cols, -1)
+        self.__piecesInColumns = Array[Int](self.__cols, 0)
+
+        for i in range(self.__rows * self.__cols):
+            self.__boardState[i] = other.__boardState[i]
+
+        for i in range(self.__cols):
+            self.__piecesInColumns[i] = other.__piecesInColumns[i]
+
+
+
+    fn playPiece(inout self, piece: Int, column: Int) -> Bool:
+        if column < 0 or column >= self.__cols or self.__piecesInColumns[column] >= self.__rows:
+            # Column is not in the range of playable columns
+            return False
+        else:
+            # Calculate index for the bottom playable spot in the column
+            let index = (self.__rows - self.__piecesInColumns[column] - 1) * self.__cols + column
+
+            # Set the bottom playable spot in the column to the piece
+            self.__boardState[index] = piece
+
+            # Update last played row and column
+            self.__lastPlayedRow = self.__rows - self.__piecesInColumns[column] - 1
+            self.__lastPlayedCol = column
+
+            # Update the count of pieces in the column
+            self.__piecesInColumns[column] += 1
+
+            return True
+
+    fn getPieceAtLocation(inout self, row: Int, col: Int) -> Int:
+        return self.__boardState[row * self.__cols + col]
+
+    fn checkLine(inout self, rise: Int, run: Int) -> Bool:
+        var count = 1
+        var row = self.__lastPlayedRow - rise
+        var col = self.__lastPlayedCol - run
+        let lastRow = self.__lastPlayedRow
+        let lastCol = self.__lastPlayedCol
+
+        while row >= 0 and row < self.__rows and col >= 0 and col < self.__cols \
+            and self.__boardState[row * self.__cols + col] == self.__boardState[lastRow * self.__cols + lastCol]:
+                count = count + 1
+                col -= run
+                row -= rise
+
+        row = self.__lastPlayedRow + rise
+        col = self.__lastPlayedCol + run
+
+        while row >= 0 and row < self.__rows and col >= 0 and col < self.__cols \
+            and self.__boardState[row * self.__cols + col] == self.__boardState[lastRow * self.__cols + lastCol]:
+                count = count + 1
+                col += run
+                row += rise
+
+
+        return count >= self.__numberToWin
+
+    fn horizontalWin(inout self) -> Bool: 
+        return self.checkLine(0, 1)
+
+    fn verticalWin(inout self) -> Bool:
+        return self.checkLine(1, 0)
+
+    fn leftDiagWin(inout self) -> Bool:
+        return self.checkLine(1, 1)
+
+    fn rightDiagWin(inout self) -> Bool: 
+        return self.checkLine(-1, 1)
+
+    fn checkForWinner(inout self) -> Bool:
+        if self.horizontalWin() or self.verticalWin() \
+            or self.leftDiagWin() or self.rightDiagWin():
+            return True
+        return False
+    
+    fn boardFull(inout self) -> Bool:
+        for i in range(self.__cols):
+            if self.__piecesInColumns[i] < self.__rows:
+                return False
+        
+        return True
+
+    # this function is used for quick debugging, not final output
+    fn printBoard(inout self, r: Int, c: Int) -> None:
+        print("number to win: " + String(self.__numberToWin))
+        print("array size " + String(self.__boardState.size))
+        print("last row: " + String(self.__lastPlayedRow))
+        print("last col: " + String(self.__lastPlayedCol))
+        var output: String = ""
+        for i in range(r):
+            output = ""
+            for j in range(c):
+                let index = i * c + j
+                output = output + String(self.__boardState[index])
+            print(output)
+        print(self.__cols)
+        print(self.__rows)
+        print(self.__numberToWin)
+        print(self.__playerOneID)
+        print(self.__playerTwoID)

@@ -1,0 +1,224 @@
+from commandLine import *
+from python import Python as py
+
+def yesOrNo(question : String):
+    input = py.import_module("builtins").input
+    while True:
+        answer = input(question + " (y/n):").__str__()
+        if answer == "y" or answer == "Y":
+            return True
+        elif answer == "n" or answer == "N":
+            return False
+        else:
+            print("Please enter y or n")
+
+def chooseAI():
+
+    ai = 0
+
+    input = py.import_module("builtins").input
+    while True:
+        answer = input("Please enter the difficulty of the ai you would like to play against (e, m, h): ").__str__()
+        if answer == "e" or answer == "E":
+            ai = 1
+        elif answer == "m" or answer == "M":
+            ai = 2
+        elif answer == "h" or answer == "H":
+            ai = 3
+        else:
+            print("Please enter e, m, or h")
+
+
+        if ai != 0:
+            break
+
+    return ai
+
+from history import History
+
+struct Menu:
+    var board: Board
+    var player1: String
+    var player2: String
+    var history: History
+
+    def __init__(inout self):
+        input = py.import_module("builtins").input
+        self.player1 = "Player 1"
+        self.player2 = "Player 2"
+        self.history = History(6 * 7 + 10)
+
+        self.board = Board(6, 7, 4, 1, 2)
+
+        if yesOrNo("Would you like to play against an AI?"):
+            ai = chooseAI()
+
+            self.player1 = input("Please enter the name of player 1: ").__str__()
+
+            if ai == 1:
+                self.playEasy()
+            elif ai == 2:
+                self.playMedium()
+            elif ai == 3:
+                self.playHard()
+
+        elif yesOrNo("Would you like to watch two AI's Play?"):
+            self.playAIvAI()
+
+        else:
+            self.playPvP()
+
+    def playerPlay(inout self, player : Int):
+        input = py.import_module("builtins").input
+
+        playerName = self.player1 if player == 1 else self.player2
+        playerPiece = 0 if player == 1 else 1
+        
+        locationToPlay = input(playerName + ", please enter the column you would like to play in: ").__str__()
+        locNum = -1
+        try:
+            locNum = atol(locationToPlay) - 1
+        except:
+            pass
+
+        while self.board.getPieceAtLocation(0, locNum) != -1 or (locNum < 0 or locNum >= self.board.__cols):
+            locationToPlay = input("That column is full, please enter a different column: ").__str__()
+            try:
+                locNum = atol(locationToPlay) - 1
+            except:
+                locNum = -1
+
+        self.history.addMove(locNum, playerPiece)
+
+        self.board.playPiece(playerPiece, locNum)
+
+    def playPvP(inout self):
+        input = py.import_module("builtins").input
+
+
+        self.player1 = input("Please enter the name of player 1: ").__str__()
+        self.player2 = input("Please enter the name of player 2: ").__str__()
+
+
+        var pieceNumToAdd = 1
+        var player = 1
+        while self.board.checkForWinner() == False and not self.board.boardFull(): # Play until a player has won
+            self.playerPlay(player)
+
+            player += pieceNumToAdd
+            pieceNumToAdd *= -1
+
+            commandLine.displayBoard(self.board)
+
+        if not self.board.checkForWinner() and self.board.boardFull():
+            print(self.player1 + " and " + self.player2 + " tied!")
+        elif player == 2:
+            print(self.player1 + " has won!")
+        else:   
+            print(self.player2 + " has won!")
+
+    def playEasy(inout self):
+        from basicAI import basic_ai
+        ai = basic_ai(1)
+
+        var isPlayerTurn = True
+
+        while self.board.checkForWinner() == False: # Play until a player has won
+            if isPlayerTurn:
+                self.playerPlay(1)
+            else:
+                let choice = ai.makeChoice(self.board)
+
+                self.history.addMove(choice, 1)
+                self.board.playPiece(1, choice)
+
+            commandLine.displayBoard(self.board)
+
+            isPlayerTurn = not isPlayerTurn
+
+        if not self.board.checkForWinner() and self.board.boardFull():
+            print(self.player1 + " and " + self.player2 + "tied!")
+
+        elif not isPlayerTurn:
+            print(self.player1 + " has won!")
+        else:   
+            print("The AI has won!")
+
+    def playMedium(inout self):
+        from avgAI import max_ai
+        ai = max_ai(1,0)
+
+        var isPlayerTurn = True
+
+        while self.board.checkForWinner() == False: # Play until a player has won
+            if isPlayerTurn:
+                self.playerPlay(1)
+            else:
+                let choice = ai.makeChoice(self.board)
+
+                self.board.playPiece(1, choice)
+                self.history.addMove(choice, 1)
+
+            commandLine.displayBoard(self.board)
+
+            isPlayerTurn = not isPlayerTurn
+
+        if not self.board.checkForWinner() and self.board.boardFull():
+            print(self.player1 + " and " + self.player2 + "tied!")
+        elif not isPlayerTurn:
+            print(self.player1 + " has won!")
+        else:   
+            print("The AI has won!")
+
+    def playHard(inout self):
+        from minmaxAI import min_max_ai
+        ai = min_max_ai(1,0)
+
+        var isPlayerTurn = True
+
+        while self.board.checkForWinner() == False: # Play until a player has won
+            if isPlayerTurn:
+                self.playerPlay(1)
+            else:
+                let choice = ai.makeChoice(self.board)
+
+                self.board.playPiece(1, choice)
+                self.history.addMove(choice, 1)
+
+            commandLine.displayBoard(self.board)
+
+            isPlayerTurn = not isPlayerTurn
+
+
+        if not self.board.checkForWinner() and self.board.boardFull():
+            print(self.player1 + " and " + self.player2 + "tied!")
+        elif not isPlayerTurn:
+            print(self.player1 + " has won!")
+        else:   
+            print("The AI has won!")
+
+    def playAIvAI(inout self):
+        from AI_vs_AI import AI_v_AI
+
+        self.history = AI_v_AI(self.board)
+
+        let lastMove = self.history.getLenOfMoves() - 1
+
+        let lastPiece = self.history.piecesPlayed[lastMove]
+        
+        self.board = Board(6, 7, 4, 1, 2)
+        for play in range(self.history.getLenOfMoves()):
+            let move = self.history.moves[play]
+            let piece = self.history.piecesPlayed[play]
+            self.board.playPiece(piece, move)
+            commandLine.displayBoard(self.board)
+
+        if not self.board.checkForWinner() and self.board.boardFull():
+            print(self.player1 + " and " + self.player2 + "tied!")
+
+        elif lastPiece == 0:
+            print("AI 1 has won!")
+
+        else:
+            print("AI 2 has won!")
+
